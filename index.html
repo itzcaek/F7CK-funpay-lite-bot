@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FunPay Lite Bot Patcher</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.container{max-width:720px;width:100%;padding:40px 20px}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:#888;font-size:14px;margin-bottom:32px}
+.card{background:#12121a;border:1px solid #1e1e2e;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px;color:#c0c0c0}
+.feature{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:14px;color:#aaa}
+.feature .icon{flex-shrink:0;width:20px;text-align:center}
+.feature b{color:#e0e0e0;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(124,58,237,.4)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:#1e1e2e;color:#aaa;border:1px solid #2a2a3a}
+.btn-secondary:hover{border-color:#3a3a4a;color:#e0e0e0}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+#status{margin-top:16px;padding:12px 16px;border-radius:8px;font-size:13px;display:none;line-height:1.6}
+#status.show{display:block}
+#status.ok{background:#0a1f0a;border:1px solid #1a3a1a;color:#4ade80}
+#status.err{background:#1f0a0a;border:1px solid #3a1a1a;color:#f87171}
+#status.info{background:#0a0a1f;border:1px solid #1a1a3a;color:#60a5fa}
+code{background:#1a1a28;padding:2px 6px;border-radius:4px;font-family:'SF Mono',monospace;font-size:13px;color:#a78bfa}
+.steps{counter-reset:step;margin-top:16px}
+.steps .step{display:flex;gap:12px;margin-bottom:12px;font-size:14px;color:#aaa;padding:10px 14px;background:#0e0e16;border-radius:8px;border:1px solid #1a1a28}
+.steps .step::before{counter-increment:step;content:counter(step);flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#1e1e2e;border-radius:6px;font-size:12px;font-weight:700;color:#7c3aed}
+.footer{margin-top:auto;padding:24px;text-align:center;font-size:12px;color:#444}
+code{background:#1a1a28;padding:2px 6px;border-radius:4px;font-family:'SF Mono',monospace;font-size:13px;color:#a78bfa}
+
+.progress{height:4px;background:#1a1a28;border-radius:2px;overflow:hidden;margin-top:12px;display:none}
+.progress.show{display:block}
+.progress .bar{height:100%;background:linear-gradient(90deg,#7c3aed,#3b82f6);width:0;transition:width .3s}
+
+/* Drop zone */
+.dropzone{border:2px dashed #2a2a3a;border-radius:12px;padding:40px 20px;text-align:center;margin-top:16px;transition:all .2s;cursor:pointer}
+.dropzone:hover,.dropzone.over{border-color:#7c3aed;background:rgba(124,58,237,.05)}
+.dropzone p{font-size:14px;color:#666;margin-top:8px}
+.dropzone .big{font-size:40px;margin-bottom:8px}
+.dropzone input{display:none}
+.or{text-align:center;color:#444;font-size:13px;margin:12px 0}
+.download-link{color:#60a5fa;text-decoration:none;font-size:13px}
+.download-link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>FunPay Lite Bot Patcher</h1>
+<p class="subtitle">Pro фичи + клиентский экспорт + анонимность</p>
+
+<div class="card">
+<h2>Что делает</h2>
+<div class="feature"><span class="icon">🔓</span><span><b>Pro фичи</b> — экспорт, графики, перевод, темы — всё бесплатно</span></div>
+<div class="feature"><span class="icon">📊</span><span><b>Клиентский экспорт</b> — CSV/JSON генерируется в браузере, без сервера</span></div>
+<div class="feature"><span class="icon">🌐</span><span><b>Перевод лотов</b> — через Google Translate напрямую</span></div>
+<div class="feature"><span class="icon">🛡️</span><span><b>Анонимность</b> — heartbeat и телеметрия заблокированы</span></div>
+<div class="feature"><span class="icon">🎨</span><span><b>Цвета без логина</b> — скрытие и настройка цветов ника</span></div>
+</div>
+
+<div class="card">
+<h2>Запатчить расширение</h2>
+
+<div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+  <div class="big">📦</div>
+  <b>Перетащи CRX файл сюда</b>
+  <p>или нажми чтобы выбрать</p>
+  <p style="font-size:12px;color:#444;margin-top:4px">Расширение .crx из Chrome Web Store</p>
+  <input type="file" id="fileInput" accept=".crx,.zip">
+</div>
+
+<div class="or">— как скачать CRX? —</div>
+
+<div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+  <a class="btn btn-secondary" href="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=128.0&acceptformat=crx2,crx3&x=id%3Damicfiagmpbgfiiopieeemlkblfeeeip%26uc" download="funpay-lite-bot.crx" style="text-decoration:none">
+    📦 Скачать CRX с Chrome Web Store
+  </a>
+  <a class="btn btn-secondary" href="https://github.com/itzcaek/F7CK-funpay-lite-bot/raw/main/archive/v2.0.6/funpay-lite-bot-v2.0.6-original.crx" download style="text-decoration:none">
+    📦 Скачать CRX v2.0.6 (архив)
+  </a>
+</div>
+<p style="font-size:12px;color:#555;margin-top:8px;text-align:center">Свежая версия или проверенная 2.0.6 из архива</p>
+
+<div class="progress" id="progress"><div class="bar" id="progressBar"></div></div>
+<div id="status"></div>
+
+</div>
+
+<div class="card">
+<h2>Как установить</h2>
+<div class="steps">
+<div class="step">Распакуй скачанный <code>funpay-lite-bot-patched.zip</code></div>
+<div class="step">Открой <code>chrome://extensions/</code>, включи Developer mode</div>
+<div class="step">Нажми «Загрузить распакованное расширение» и выбери папку</div>
+<div class="step">Отключи оригинальное расширение, перезагрузи FunPay</div>
+</div>
+</div>
+</div>
+
+
+
+<script>
+const CONTENT_PATCHES = [
+  ["ua() — Community → true",
+   'function ua(e){return!!e&&(e.subscriptions??[]).some(t=>t.planKey==="community"&&t.status==="active")}',
+   'function ua(e){return true}'],
+  ["A() — Feature gate → true",
+   'function A(e,t){return!!e&&(e.features??[]).includes(t)}',
+   'function A(e,t){return true}'],
+  ["yu() — Pro check → true",
+   'function yu(){let{user:e}=Q();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
+   'function yu(){return true}'],
+  ["Fr() — Tier → Pro",
+   'function Fr(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Ir.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Ir[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
+   'function Fr(e){return{tier:"pro",label:we("pro")}}'],
+  ["Hide colors — no login",
+   'async function b(){if(l.checked){if(!e){l.checked=!1,W();return}if(!A(e,Nm)){l.checked=!1,z({title:u("featureGatedCommunityTitle"),message:u("nicknameColorHideNeedCommunity"),tier:"community"});return}await D(Vt,!0),r(!0),e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}',
+   'async function b(){if(l.checked){await D(Vt,!0),r(!0),e&&e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}'],
+  ["lr() — reset color no-fail",
+   'function lr(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
+   'function lr(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'],
+];
+
+function findFunc(content, start) {
+  let idx = content.indexOf(start);
+  if (idx === -1) return [null, null];
+  let depth = 0, end = idx;
+  for (let i = idx; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    if (content[i] === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
+  }
+  return [idx, end];
+}
+
+function applyBgPatch(content, name, newCode) {
+  let funcName = newCode.match(/(?:async )?function (\w+)/)?.[1];
+  if (!funcName) return false;
+  let search = (newCode.startsWith("async") ? "async function " : "function ") + funcName + "(";
+  let [idx, end] = findFunc(content, search);
+  if (idx === null) return false;
+  return content.substring(0, idx) + newCode + content.substring(end);
+}
+
+function applyOtPatch(content) {
+  let [idx, end] = findFunc(content, "function Ot(");
+  if (idx === null) return false;
+  let func = content.substring(idx, end);
+  if (!func.includes('catch(r){return{ok:!1')) return false;
+  func = func.replace('catch(r){return{ok:!1,code:"NETWORK_ERROR",message:r.message}}', 'catch(r){return{ok:!0,styleKey:e}}');
+  return content.substring(0, idx) + func + content.substring(end);
+}
+
+function setStatus(msg, type) {
+  let el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+}
+
+
+
+function setProgress(pct) {
+  let bar = document.getElementById('progressBar');
+  document.getElementById('progress').classList.add('show');
+  bar.style.width = pct + '%';
+}
+
+async function processFile(bytes) {
+  setStatus('Обрабатываю файл...', 'info');
+  setProgress(10);
+
+  // Parse CRX → ZIP
+  let magic = String.fromCharCode(...bytes.slice(0, 4));
+  let zipBytes;
+  if (magic === 'Cr24') {
+    let version = new DataView(bytes.buffer).getUint32(4, true);
+    let headerSize = new DataView(bytes.buffer).getUint32(8, true);
+    zipBytes = bytes.slice(12 + headerSize);
+    setStatus(`CRX${version} формат, распаковываю...`, 'info');
+  } else if (magic === 'PK\x03\x04') {
+    zipBytes = bytes;
+    setStatus('ZIP формат, распаковываю...', 'info');
+  } else {
+    setStatus('Неизвестный формат файла. Нужен .crx или .zip', 'err');
+    return;
+  }
+
+  let zip;
+  try {
+    zip = await JSZip.loadAsync(zipBytes);
+  } catch(e) {
+    setStatus('Ошибка распаковки: ' + e.message, 'err');
+    return;
+  }
+  setProgress(30);
+
+  // Check it's the right extension
+  let manifestFile = zip.file("manifest.json");
+  if (!manifestFile) {
+    setStatus('Это не расширение Chrome — нет manifest.json', 'err');
+    return;
+  }
+  let manifest = JSON.parse(await manifestFile.async("string"));
+  if (manifest.name !== "__MSG_extName__" && !manifest.name?.includes("FunPay")) {
+    setStatus('Это не FunPay Lite Bot расширение', 'err');
+    return;
+  }
+  setStatus(`Версия: ${manifest.version}`, 'info');
+  setProgress(40);
+
+  // Patch
+  let patched = 0, failed = 0;
+
+  // manifest.json
+  manifest = (await manifestFile.async("string"))
+    .replace('"update_url": "https://clients2.google.com/service/update2/crx",\n', '');
+  zip.file("manifest.json", manifest);
+  patched++;
+  setProgress(45);
+
+  // content/c.js
+  let cFile = zip.file("content/c.js");
+  if (cFile) {
+    let cjs = await cFile.async("string");
+    for (let [name, old, rep] of CONTENT_PATCHES) {
+      if (cjs.includes(old)) {
+        cjs = cjs.replace(old, rep);
+        patched++;
+      }
+    }
+    zip.file("content/c.js", cjs);
+  }
+  setProgress(55);
+
+  // background/b.js
+  let bFile = zip.file("background/b.js");
+  if (bFile) {
+    let bjs = await bFile.async("string");
+
+    // pt() — orders export
+    let ptOld = 'function pt(e,r,t,n,o,s,a){let i={kind:e,format:r,fromMs:t,toMs:n,locale:s,orders:o.map(g=>Ro(g,a?.get(g.orderId)??null))},c;try{c=await U("/orders/export",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(i)})}catch(g){let S=g?.message??"unknown";return k(`fetchExport(${e}/${r}): network error: ${S}`),{ok:!1,error:{code:"NETWORK_ERROR",message:S}}}if(!c.ok){let g=`HTTP_${c.status}`,S=c.statusText||"request failed";try{let T=await c.json();T?.error?.code&&(g=T.error.code),T?.error?.message&&(S=T.error.message)}catch{}return k(`fetchExport(${e}/${r}): server error ${c.status} (${g}): ${S}`),{ok:!1,error:{code:g,message:S}}}let u=new Uint8Array(await c.arrayBuffer()),f=Co(c.headers.get("content-disposition"))??`funpaylitebot-${e}-export.${r}`,p=c.headers.get("content-type")??"application/octet-stream",l=c.headers.get("x-export-count"),h=l&&Number.isFinite(Number(l))?Number(l):0;return{ok:!0,file:{base64:Oo(u),filename:f,mime:p,count:h}}}';
+    let ptNew = 'async function pt(e,r,t,n,o,s,a){let orders=o.map(g=>Ro(g,a?.get(g.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+r;if(r==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let hdr=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[hdr.join(",")];for(let ord of orders){let row=hdr.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}';
+    if (bjs.includes(ptOld)) { bjs = bjs.replace(ptOld, ptNew); patched++; }
+
+    // Function patches
+    let bgFuncs = [
+      ["lt() — export finances",
+       'async function lt(e,r,t,n,o){let txs=n.map(Po);let count=txs.length;let fname="funpaylitebot-finances-export."+e;if(e==="json"){let json=JSON.stringify(txs,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let hdr=["id","dateMs","txType","status","title","signed","currency","refOrderId"];let csvRows=[hdr.join(",")];for(let tx of txs){let row=hdr.map(h=>{let v=tx[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["Ir() — unconfirmed filter",
+       'async function Ir(e,r){let t=[];try{await e.db.iterateByDate(null,null,o=>{o.orderStatus==="paid"&&t.push({orderId:o.orderId,orderDate:o.orderDate})})}catch(o){return k(`listUnconfirmedOrders: IDB iterate failed: ${o.message}`),{ok:!1,code:"IDB_ERROR",message:o.message}}if(t.length===0)return{ok:!0,results:r.thresholdsHours.map(o=>({thresholdHours:o,ids:[]}))};let now=Date.now();let results=r.thresholdsHours.map(h=>{let cutoff=now-h*3600000;let ids=t.filter(o=>o.orderDate<=cutoff).map(o=>o.orderId);return{thresholdHours:h,ids:ids}});return{ok:!0,results:results}}'],
+      ["Et() — translate prepare",
+       'async function Et(e){try{let src=e.source||{};let requests=[];let fields=["title","description"];for(let f of fields){let text=src[f];if(!text||!text.trim())continue;let encoded=encodeURIComponent(text.trim());let url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=en&dt=t&q="+encoded;requests.push({field:f,url:url})}if(requests.length===0)return{ok:!1,code:"EMPTY_SOURCE",message:"No text to translate"};return{ok:!0,requests:requests}}catch(t){return k("prepareTranslate: local generation failed: "+t.message),{ok:!1,code:"LOCAL_ERROR",message:t.message}}}'],
+      ["In() — heartbeat",
+       'async function In(){return null}'],
+      ["ta() — settings sync",
+       'async function ta(e){return{ok:!0,nextIntervalMs:null,status:null}}'],
+      ["ze() — install tracking",
+       'async function ze(e){}'],
+    ];
+
+    for (let [name, rep] of bgFuncs) {
+      let result = applyBgPatch(bjs, name, rep);
+      if (result) { bjs = result; patched++; }
+    }
+
+    // Ot()
+    let otResult = applyOtPatch(bjs);
+    if (otResult) { bjs = otResult; patched++; }
+
+    zip.file("background/b.js", bjs);
+  }
+  setProgress(85);
+
+  // Generate ZIP
+  let blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+  setProgress(100);
+
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = 'funpay-lite-bot-patched.zip';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  setStatus(`Готово! ${patched} патчей применено. ZIP скачан.`, 'ok');
+}
+
+// Drag & drop
+let dz = document.getElementById('dropzone');
+let fi = document.getElementById('fileInput');
+
+['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('over'); }));
+
+dz.addEventListener('drop', ev => {
+  let file = ev.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+fi.addEventListener('change', ev => {
+  let file = ev.target.files[0];
+  if (file) readFile(file);
+});
+
+async function readFile(file) {
+  let buf = await file.arrayBuffer();
+  let bytes = new Uint8Array(buf);
+  processFile(bytes);
+}
+</script>
+</body>
+</html>
