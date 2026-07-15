@@ -95,45 +95,78 @@ def extract_crx(crx_data: bytes, output_path: str):
 # ─── Патчи ────────────────────────────────────────────────────
 
 CONTENT_PATCHES = [
-    # (описание, старое, новое)
+    # v2.0.6 patterns
     (
-        "ua() — Community check → always true",
+        "ua() v2.0.6 — Community check → always true",
         'function ua(e){return!!e&&(e.subscriptions??[]).some(t=>t.planKey==="community"&&t.status==="active")}',
         'function ua(e){return true}'
     ),
+    (
+        "yu() v2.0.6 — Pro subscription check → always true",
+        'function yu(){let{user:e}=Q();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
+        'function yu(){return true}'
+    ),
+    (
+        "Fr() v2.0.6 — Tier display → always Pro",
+        'function Fr(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Ir.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Ir[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
+        'function Fr(e){return{tier:"pro",label:we("pro")}}'
+    ),
+    # v2.0.7 patterns (renamed functions)
+    (
+        "pa() v2.0.7 — Community check → always true",
+        'function pa(e){return!!e&&(e.subscriptions??[]).some(t=>t.planKey==="community"&&t.status==="active")}',
+        'function pa(e){return true}'
+    ),
+    (
+        "wu() v2.0.7 — Pro subscription check → always true",
+        'function wu(){let{user:e}=j();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
+        'function wu(){return true}'
+    ),
+    (
+        "Ur() v2.0.7 — Tier display → always Pro",
+        'function Ur(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Hr.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Hr[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
+        'function Ur(e){return{tier:"pro",label:we("pro")}}'
+    ),
+    # Common patterns (both versions)
     (
         "A() — Feature gate → always true",
         'function A(e,t){return!!e&&(e.features??[]).includes(t)}',
         'function A(e,t){return true}'
     ),
+    # v2.0.6 toggle
     (
-        "yu() — Pro subscription check → always true",
-        'function yu(){let{user:e}=Q();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
-        'function yu(){return true}'
-    ),
-    (
-        "Fr() — Tier display → always Pro",
-        'function Fr(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Ir.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Ir[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
-        'function Fr(e){return{tier:"pro",label:we("pro")}}'
-    ),
-    (
-        "Hide nickname colors toggle → no login required",
+        "Hide colors v2.0.6 → no login required",
         'async function b(){if(l.checked){if(!e){l.checked=!1,W();return}if(!A(e,Nm)){l.checked=!1,z({title:u("featureGatedCommunityTitle"),message:u("nicknameColorHideNeedCommunity"),tier:"community"});return}await D(Vt,!0),r(!0),e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}',
         'async function b(){if(l.checked){await D(Vt,!0),r(!0),e&&e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}'
     ),
+    # v2.0.7 toggle
+    (
+        "Hide colors v2.0.7 → no login required",
+        'async function b(){if(l.checked){if(!e){l.checked=!1,W();return}if(!A(e,Om)){l.checked=!1,z({title:u("featureGatedCommunityTitle"),message:u("nicknameColorHideNeedCommunity"),tier:"community"});return}await D(Ft,!0),r(!0),e.nicknameColor&&ur()}else await D(Ft,!1),r(!1)}',
+        'async function b(){if(l.checked){await D(Ft,!0),r(!0),e&&e.nicknameColor&&ur()}else await D(Ft,!1),r(!1)}'
+    ),
+    # v2.0.6 lr()
     (
         "lr() — reset nickname color → no-fail",
         'function lr(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
         'function lr(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'
     ),
+    # v2.0.7 ur()
+    (
+        "ur() — reset nickname color → no-fail",
+        'function ur(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
+        'function ur(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'
+    ),
 ]
 
 BACKGROUND_EXPORT_PATCHES = [
     # pt() — orders export → client-side CSV/JSON
+    # v2.0.6: function pt(...) | v2.0.7: async function pt(...)
+    # replacement must NOT have async — applyBgPatch preserves the original async keyword
     (
         "pt() — orders export → client-side",
         None,  # ищем по началу функции
-        'async function pt(e,r,t,n,o,s,a){let orders=o.map(g=>Ro(g,a?.get(g.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+r;if(r==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let header=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[header.join(",")];for(let ord of orders){let row=header.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'
+        'function pt(e,r,t,n,o,s,a){let orders=o.map(g=>Ro(g,a?.get(g.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+r;if(r==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let header=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[header.join(",")];for(let ord of orders){let row=header.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'
     ),
     # lt() — finances export → client-side
     (
@@ -170,6 +203,12 @@ BACKGROUND_EXPORT_PATCHES = [
         "ze() — install tracking → blocked",
         None,
         'async function ze(e){}'
+    ),
+    # Ye() — uninstall tracking → blocked
+    (
+        "Ye() — uninstall tracking → blocked",
+        None,
+        'async function Ye(){return}'
     ),
     # Ot() — nickname color → no-fail on error
     (
@@ -255,6 +294,15 @@ def apply_function_patches(content: str, patches: list):
             warn(f"  {desc} — не удалось определить начало функции")
             failed += 1
             continue
+        
+        idx, end, old_func = find_function(content, search_start)
+        
+        # Если не нашли с async, пробуем без async (для v2.0.7 где async уже есть)
+        if idx is None and search_start.startswith("async"):
+            alt_start = search_start.replace("async function ", "function ")
+            idx, end, old_func = find_function(content, alt_start)
+            if idx is not None:
+                search_start = alt_start
         
         idx, end, old_func = find_function(content, search_start)
         if idx is None:
