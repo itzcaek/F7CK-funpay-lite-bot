@@ -9,7 +9,7 @@
 <br>
 
 ![License](https://img.shields.io/badge/license-MIT-2ea44f?style=flat-square)
-![Version](https://img.shields.io/badge/version-2.0.7-1084d0?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.3.5-1084d0?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Chromium-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![Deps](https://img.shields.io/badge/dependencies-0-orange?style=flat-square)
 ![Made with](https://img.shields.io/badge/made%20with-HTML%20%2B%20JS%20%2B%20Python-8957e5?style=flat-square)
@@ -101,11 +101,13 @@ python patcher.py
 
 | Версия | Дата | Статус | Файлы |
 | :---: | :---: | :--- | :--- |
-| **2.0.7** | 14.07.2026 | ✅ Полная поддержка | [Original](archive/v2.0.7/funpay-lite-bot-v2.0.7-original.crx) · [Patched](archive/v2.0.7/funpay-lite-bot-v2.0.7-patched.zip) |
-| **2.0.6** | 13.07.2026 | ✅ Полная поддержка | [Original](archive/v2.0.6/funpay-lite-bot-v2.0.6-original.crx) · [Patched](archive/v2.0.6/funpay-lite-bot-v2.0.6-patched.zip) |
+| **2.3.5** | 09.10.2026 | ✅ Актуальная | патчер скачивает CRX напрямую с Chrome Web Store |
+| **2.3.4** | 07.10.2026 | 📦 Legacy | поддержка сохранена в патчере |
+| **2.0.7** | 14.07.2026 | 📦 Legacy | [Original](archive/v2.0.7/funpay-lite-bot-v2.0.7-original.crx) · [Patched](archive/v2.0.7/funpay-lite-bot-v2.0.7-patched.zip) |
+| **2.0.6** | 13.07.2026 | 📦 Legacy | [Original](archive/v2.0.6/funpay-lite-bot-v2.0.6-original.crx) · [Patched](archive/v2.0.6/funpay-lite-bot-v2.0.6-patched.zip) |
 
 > [!NOTE]
-> Патчер применяет все патчи к загруженному CRX. Если структура кода не менялась — всё сработает. Если разработчики перепишут код, часть патчей может не примениться.
+> Патчер ищет функции по сигнатурам и внутренним маркерам, а не только по именам. Если разработчики снова перепишут код, часть патчей может не примениться.
 
 ---
 
@@ -122,7 +124,7 @@ python patcher.py
 | :--- | :--- |
 | Веб-патчер | HTML + JS + JSZip · 0 зависимостей |
 | Python | Python 3 + stdlib · 0 зависимостей |
-| Патчи | 14 функций, чистый replacement |
+| Патчи | версионные функциональные replacement с маркерами |
 
 ---
 

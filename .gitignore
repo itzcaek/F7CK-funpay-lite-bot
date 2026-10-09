@@ -3,3 +3,13 @@ funpay-lite-bot-patched/**/
 
 fresh/
 fresh/**/
+
+latest-orig/
+latest-orig/**/
+
+# локальная распаковка оригинала 2.3.4 (сама v2.3.4 поддерживается патчером)
+archive/v2.3.4/
+archive/v2.3.4/**/
+
+__pycache__/
+__pycache__/**/

@@ -223,7 +223,7 @@ code{font-family:'Courier New',monospace;background:#fff;padding:1px 5px;box-sha
     <div class="statusbar">
       <span class="cell grow">Готово</span>
       <span class="cell">Лицензия: MIT</span>
-      <span class="cell">Версия 2.0.7</span>
+      <span class="cell">Версия 2.3.5</span>
     </div>
   </div>
 </div>
@@ -236,44 +236,41 @@ code{font-family:'Courier New',monospace;background:#fff;padding:1px 5px;box-sha
 </div>
 
 <script>
-const CONTENT_PATCHES = [
-  // v2.0.6 patterns
-  ["ua() v2.0.6 — Community → true",
-   'function ua(e){return!!e&&(e.subscriptions??[]).some(t=>t.planKey==="community"&&t.status==="active")}',
-   'function ua(e){return true}'],
-  ["yu() v2.0.6 — Pro check → true",
-   'function yu(){let{user:e}=Q();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
-   'function yu(){return true}'],
-  ["Fr() v2.0.6 — Tier → Pro",
-   'function Fr(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Ir.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Ir[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
-   'function Fr(e){return{tier:"pro",label:we("pro")}}'],
-  // v2.0.7 patterns (renamed functions)
-  ["pa() v2.0.7 — Community → true",
-   'function pa(e){return!!e&&(e.subscriptions??[]).some(t=>t.planKey==="community"&&t.status==="active")}',
-   'function pa(e){return true}'],
-  ["wu() v2.0.7 — Pro check → true",
-   'function wu(){let{user:e}=j();return e?(e.subscriptions??[]).some(t=>t.planKey==="pro"&&t.status==="active"):!1}',
-   'function wu(){return true}'],
-  ["Ur() v2.0.7 — Tier → Pro",
-   'function Ur(e){if(!e||!e.subscriptions||e.subscriptions.length===0)return{tier:"basic",label:we("basic")};let t="basic",n=Hr.basic;for(let s of e.subscriptions){if(s.status!=="active")continue;let o=Hr[s.planKey]??0;o>n&&(n=o,t=s.planKey)}return{tier:t,label:we(t)}}',
-   'function Ur(e){return{tier:"pro",label:we("pro")}}'],
-  // Common patterns (both versions)
-  ["A() — Feature gate → true",
-   'function A(e,t){return!!e&&(e.features??[]).includes(t)}',
-   'function A(e,t){return true}'],
-  // v2.0.6 toggle
+const CONTENT_FUNCTION_PATCHES = [
+  // [описание, начало функции, обязательный маркер, замена]
+  ["ua() v2.0.6 — Community → true", "function ua(", 'planKey==="community"', 'function ua(e){return true}'],
+  ["pa() v2.0.7 — Community → true", "function pa(", 'planKey==="community"', 'function pa(e){return true}'],
+  ["uu() v2.3.4 — Community → true", "function uu(", 'planKey==="community"', 'function uu(e){return true}'],
+  ["hd() v2.3.5 — Community → true", "function hd(", 'planKey==="community"', 'function hd(e){return true}'],
+  ["yu() v2.0.6 — Pro check → true", "function yu(", 'planKey==="pro"', 'function yu(){return true}'],
+  ["wu() v2.0.7 — Pro check → true", "function wu(", 'planKey==="pro"', 'function wu(){return true}'],
+  ["Fr() v2.0.6 — Tier → Pro", "function Fr(", 'tier:"basic"', 'function Fr(e){return{tier:"pro",label:we("pro")}}'],
+  ["Ur() v2.0.7 — Tier → Pro", "function Ur(", 'tier:"basic"', 'function Ur(e){return{tier:"pro",label:we("pro")}}'],
+  ["qE() v2.3.4 — Best subscription → Premium", "function qE(", "filter(at)", 'function qE(e){return{planKey:"premium",status:"active",expiresAt:null}}'],
+  ["zE() v2.3.5 — Best subscription → Premium", "function zE(", "filter(at)", 'function zE(e){return{planKey:"premium",status:"active",expiresAt:null}}'],
+  ["A() v2.0.x — Feature gate → true", "function A(", ".includes(t)", 'function A(e,t){return true}'],
+  ["D() v2.3.4 — Feature gate → true", "function D(", ".includes(t)", 'function D(e,t){return true}'],
+];
+
+const CONTENT_SIMPLE_PATCHES = [
   ["Hide colors v2.0.6 — no login",
    'async function b(){if(l.checked){if(!e){l.checked=!1,W();return}if(!A(e,Nm)){l.checked=!1,z({title:u("featureGatedCommunityTitle"),message:u("nicknameColorHideNeedCommunity"),tier:"community"});return}await D(Vt,!0),r(!0),e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}',
    'async function b(){if(l.checked){await D(Vt,!0),r(!0),e&&e.nicknameColor&&lr()}else await D(Vt,!1),r(!1)}'],
-  // v2.0.7 toggle
   ["Hide colors v2.0.7 — no login",
    'async function b(){if(l.checked){if(!e){l.checked=!1,W();return}if(!A(e,Om)){l.checked=!1,z({title:u("featureGatedCommunityTitle"),message:u("nicknameColorHideNeedCommunity"),tier:"community"});return}await D(Ft,!0),r(!0),e.nicknameColor&&ur()}else await D(Ft,!1),r(!1)}',
    'async function b(){if(l.checked){await D(Ft,!0),r(!0),e&&e.nicknameColor&&ur()}else await D(Ft,!1),r(!1)}'],
-  // v2.0.6 lr()
+  ["Hide colors v2.3.4 — no login",
+   'if(y){if(!e){m.checked=!1,nt();return}if(!D(e,dC)){m.checked=!1,Ne({feature:"nickname_color",title:p("featureGatedCommunityTitle"),message:p("nicknameColorHideNeedCommunity"),tier:"community"});return}}if(!e){Y(Mi,!1),l(!1,null);return}',
+   'if(!e){Y(Mi,y),l(y,null);return}'],
+  ["Hide colors v2.3.5 — no login",
+   'if(y){if(!e){m.checked=!1,nt();return}if(!D(e,EC)){m.checked=!1,Ne({feature:"nickname_color",title:p("featureGatedCommunityTitle"),message:p("nicknameColorHideNeedCommunity"),tier:"community"});return}}if(!e){Y(Bi,!1),l(!1,null);return}',
+   'if(!e){Y(Bi,y),l(y,null);return}'],
+  ["Nickname style save v2.3.4 — no account",
+   'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);if(!ye)return ae(),ee&&nt(),{ok:!1,code:"NO_AUTH"};',
+   'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);'],
   ["lr() — reset color no-fail",
    'function lr(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
    'function lr(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'],
-  // v2.0.7 ur()
   ["ur() — reset color no-fail",
    'function ur(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
    'function ur(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'],
@@ -290,22 +287,19 @@ function findFunc(content, start) {
   return [idx, end];
 }
 
-function applyBgPatch(content, name, newCode) {
-  let funcName = newCode.match(/(?:async )?function (\w+)/)?.[1];
-  if (!funcName) return false;
-  let search = (newCode.startsWith("async") ? "async function " : "function ") + funcName + "(";
-  let [idx, end] = findFunc(content, search);
-  if (idx === null) return false;
-  return content.substring(0, idx) + newCode + content.substring(end);
-}
+function applyFuncPatch(content, desc, start, marker, rep) {
+  let candidates = [start];
+  if (start.startsWith("async function ")) candidates.push(start.replace("async function ", "function "));
+  else if (start.startsWith("function ")) candidates.push("async " + start);
 
-function applyOtPatch(content) {
-  let [idx, end] = findFunc(content, "function Ot(");
-  if (idx === null) return false;
-  let func = content.substring(idx, end);
-  if (!func.includes('catch(r){return{ok:!1')) return false;
-  func = func.replace('catch(r){return{ok:!1,code:"NETWORK_ERROR",message:r.message}}', 'catch(r){return{ok:!0,styleKey:e}}');
-  return content.substring(0, idx) + func + content.substring(end);
+  for (let s of candidates) {
+    let [idx, end] = findFunc(content, s);
+    if (idx === null) continue;
+    let old = content.substring(idx, end);
+    if (marker && !old.includes(marker)) continue;
+    return content.substring(0, idx) + rep + content.substring(end);
+  }
+  return false;
 }
 
 function setStatus(msg, type) {
@@ -379,11 +373,60 @@ async function processFile(bytes) {
   let cFile = zip.file("content/c.js");
   if (cFile) {
     let cjs = await cFile.async("string");
-    for (let [name, old, rep] of CONTENT_PATCHES) {
+    for (let [desc, start, marker, rep] of CONTENT_FUNCTION_PATCHES) {
+      let result = applyFuncPatch(cjs, desc, start, marker, rep);
+      if (result) { cjs = result; patched++; }
+    }
+    for (let [name, old, rep] of CONTENT_SIMPLE_PATCHES) {
       if (cjs.includes(old)) {
         cjs = cjs.replace(old, rep);
         patched++;
       }
+    }
+    // F7CK: модуль отображения своего стиля ника (локально, без сервера).
+    // Оригинальный Rt() писал свой стиль в кэш nicknameColors через ya();
+    // локальный патч этого не делает — модуль восстанавливает отображение
+    // своего стиля на всех страницах (шапка, профиль, чаты, списки).
+    if (!cjs.includes("F7CK: own nickname style")) {
+      cjs += `
+/* === F7CK: own nickname style — local display injection === */
+(function(){"use strict";try{
+var F7CK_SEL_KEY="f7ckNickSelection";
+function f7ckOwnNick(){try{var e=document.querySelector(".user-link-name");var t=e&&e.textContent?e.textContent.trim():"";return t||null}catch(err){return null}}
+async function f7ckSyncOwnNick(){
+try{
+var st=await chrome.storage.local.get(["authUser",F7CK_SEL_KEY,"nicknameStyles","nicknameColors"]);
+var colors=st.nicknameColors;if(!colors||typeof colors!="object")return;
+var nick=f7ckOwnNick();if(!nick)return;
+var sel=(st.authUser&&st.authUser.nicknameSelection&&typeof st.authUser.nicknameSelection=="object")?st.authUser.nicknameSelection:st[F7CK_SEL_KEY];
+var has=!!(sel&&typeof sel=="object"&&(sel.color||sel.font||sel.effect));
+var cat=st.nicknameStyles;var arr=Array.isArray(cat)?cat:(cat&&cat.styles);
+var css="";
+if(has&&Array.isArray(arr)){
+var parts=[];
+for(var gi=0;gi<3;gi++){var k=sel[["color","font","effect"][gi]];if(!k)continue;
+for(var si=0;si<arr.length;si++){var s=arr[si];if(s&&s.key===k&&typeof s.css=="string"&&s.css){parts.push(s.css);break}}
+}
+css=parts.join(";");
+}
+var styles=Object.assign({},colors.styles),users=Object.assign({},colors.users),dirty=false;
+if(css){
+if(users[nick]!=="__own__"||styles["__own__"]!==css){styles["__own__"]=css;users[nick]="__own__";dirty=true;}
+}else if(users[nick]==="__own__"){
+delete users[nick];delete styles["__own__"];dirty=true;
+}
+if(dirty)await chrome.storage.local.set({nicknameColors:Object.assign({},colors,{styles:styles,users:users})});
+}catch(err){}
+}
+chrome.storage.onChanged.addListener(function(ch,area){
+if(area!=="local")return;
+if("authUser"in ch||F7CK_SEL_KEY in ch||"nicknameStyles"in ch||"nicknameColors"in ch)f7ckSyncOwnNick();
+});
+f7ckSyncOwnNick();
+}catch(err){}})();
+/* === /F7CK own nickname style === */
+`;
+      patched++;
     }
     zip.file("content/c.js", cjs);
   }
@@ -394,39 +437,56 @@ async function processFile(bytes) {
   if (bFile) {
     let bjs = await bFile.async("string");
 
-    // pt() — orders export (v2.0.7 is already async, so ptNew must NOT have async)
-    let ptOld = 'function pt(e,r,t,n,o,s,a){let i={kind:e,format:r,fromMs:t,toMs:n,locale:s,orders:o.map(g=>Ro(g,a?.get(g.orderId)??null))},c;try{c=await U("/orders/export",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(i)})}catch(g){let S=g?.message??"unknown";return k(`fetchExport(${e}/${r}): network error: ${S}`),{ok:!1,error:{code:"NETWORK_ERROR",message:S}}}if(!c.ok){let g=`HTTP_${c.status}`,S=c.statusText||"request failed";try{let T=await c.json();T?.error?.code&&(g=T.error.code),T?.error?.message&&(S=T.error.message)}catch{}return k(`fetchExport(${e}/${r}): server error ${c.status} (${g}): ${S}`),{ok:!1,error:{code:g,message:S}}}let u=new Uint8Array(await c.arrayBuffer()),f=Co(c.headers.get("content-disposition"))??`funpaylitebot-${e}-export.${r}`,p=c.headers.get("content-type")??"application/octet-stream",l=c.headers.get("x-export-count"),h=l&&Number.isFinite(Number(l))?Number(l):0;return{ok:!0,file:{base64:Oo(u),filename:f,mime:p,count:h}}}';
-    let ptOldAsync = 'async function pt(e,r,t,n,o,s,a){let i={kind:e,format:r,fromMs:t,toMs:n,locale:s,orders:o.map(g=>Ro(g,a?.get(g.orderId)??null))},c;try{c=await U("/orders/export",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(i)})}catch(g){let S=g?.message??"unknown";return k(`fetchExport(${e}/${r}): network error: ${S}`),{ok:!1,error:{code:"NETWORK_ERROR",message:S}}}if(!c.ok){let g=`HTTP_${c.status}`,S=c.statusText||"request failed";try{let T=await c.json();T?.error?.code&&(g=T.error.code),T?.error?.message&&(S=T.error.message)}catch{}return k(`fetchExport(${e}/${r}): server error ${c.status} (${g}): ${S}`),{ok:!1,error:{code:g,message:S}}}let u=new Uint8Array(await c.arrayBuffer()),f=Co(c.headers.get("content-disposition"))??`funpaylitebot-${e}-export.${r}`,p=c.headers.get("content-type")??"application/octet-stream",l=c.headers.get("x-export-count"),h=l&&Number.isFinite(Number(l))?Number(l):0;return{ok:!0,file:{base64:Oo(u),filename:f,mime:p,count:h}}}';
-    let ptNew = 'function pt(e,r,t,n,o,s,a){let orders=o.map(g=>Ro(g,a?.get(g.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+r;if(r==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let hdr=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[hdr.join(",")];for(let ord of orders){let row=hdr.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}';
-    if (bjs.includes(ptOld)) { bjs = bjs.replace(ptOld, ptNew); patched++; }
-    else if (bjs.includes(ptOldAsync)) { bjs = bjs.replace(ptOldAsync, ptNew); patched++; }
-
-    // Function patches
-    let bgFuncs = [
-      ["lt() — export finances",
-       'async function lt(e,r,t,n,o){let txs=n.map(Po);let count=txs.length;let fname="funpaylitebot-finances-export."+e;if(e==="json"){let json=JSON.stringify(txs,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let hdr=["id","dateMs","txType","status","title","signed","currency","refOrderId"];let csvRows=[hdr.join(",")];for(let tx of txs){let row=hdr.map(h=>{let v=tx[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
-      ["Ir() — unconfirmed filter",
+    let bgPatches = [
+      ["mr() v2.3.4 — orders export", "async function mr(", "/orders/export",
+       'async function mr(e,n,r,t,o,a,s){let orders=o.map(h=>_i(h,s?.get(h.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+n;if(n==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);return{ok:!0,file:{base64:Ni(bytes),filename:fname,mime:"application/json",count:count}}}let header=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[header.join(",")];for(let ord of orders){let row=header.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);return{ok:!0,file:{base64:Ni(allBytes),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["pr() v2.3.5 — orders export", "async function pr(", "/orders/export",
+       'async function pr(e,n,r,t,o,a,s){let orders=o.map(h=>Li(h,s?.get(h.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+n;if(n==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);return{ok:!0,file:{base64:Ni(bytes),filename:fname,mime:"application/json",count:count}}}let header=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[header.join(",")];for(let ord of orders){let row=header.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);return{ok:!0,file:{base64:Ni(allBytes),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["pt() v2.0.x — orders export", "function pt(", "/orders/export",
+       'function pt(e,r,t,n,o,s,a){let orders=o.map(g=>Ro(g,a?.get(g.orderId)??null));let count=orders.length;let fname="funpaylitebot-"+e+"-export."+r;if(r==="json"){let json=JSON.stringify(orders,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let header=["orderId","description","subcategory","price","currency","counterUsername","counterId","status","orderDateMs","orderDateText","costPrice","costCurrency"];let csvRows=[header.join(",")];for(let ord of orders){let row=header.map(h=>{let v=ord[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["lr() v2.3.4 — finances export", "async function lr(", "/finances/export",
+       'async function lr(e,n,r,t,o){let txs=t.map(Oi);let count=txs.length;let fname="funpaylitebot-finances-export."+e;if(e==="json"){let json=JSON.stringify(txs,null,2);let bytes=new TextEncoder().encode(json);return{ok:!0,file:{base64:Ui(bytes),filename:fname,mime:"application/json",count:count}}}let header=["id","dateMs","txType","status","title","signed","currency","refOrderId"];let csvRows=[header.join(",")];for(let tx of txs){let row=header.map(h=>{let v=tx[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);return{ok:!0,file:{base64:Ui(allBytes),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["ur() v2.3.5 — finances export", "async function ur(", "/finances/export",
+       'async function ur(e,n,r,t,o){let txs=t.map(Ii);let count=txs.length;let fname="funpaylitebot-finances-export."+e;if(e==="json"){let json=JSON.stringify(txs,null,2);let bytes=new TextEncoder().encode(json);return{ok:!0,file:{base64:Ui(bytes),filename:fname,mime:"application/json",count:count}}}let header=["id","dateMs","txType","status","title","signed","currency","refOrderId"];let csvRows=[header.join(",")];for(let tx of txs){let row=header.map(h=>{let v=tx[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);return{ok:!0,file:{base64:Ui(allBytes),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["lt() v2.0.x — finances export", "async function lt(", "/finances/export",
+       'async function lt(e,r,t,n,o){let txs=n.map(Po);let count=txs.length;let fname="funpaylitebot-finances-export."+e;if(e==="json"){let json=JSON.stringify(txs,null,2);let bytes=new TextEncoder().encode(json);let b64="";for(let i=0;i<bytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname,mime:"application/json",count:count}}}let header=["id","dateMs","txType","status","title","signed","currency","refOrderId"];let csvRows=[header.join(",")];for(let tx of txs){let row=header.map(h=>{let v=tx[h];if(v===null||v===undefined)return"";let sv=String(v);if(sv.includes(",")||sv.includes(String.fromCharCode(34))||sv.includes("\\n"))return String.fromCharCode(34)+sv.replace(/"/g,String.fromCharCode(34)+String.fromCharCode(34))+String.fromCharCode(34);return sv});csvRows.push(row.join(","))}let csv=csvRows.join("\\r\\n");let bom=new Uint8Array([239,187,191]);let csvBytes=new TextEncoder().encode(csv);let allBytes=new Uint8Array(bom.length+csvBytes.length);allBytes.set(bom);allBytes.set(csvBytes,bom.length);let b64="";for(let i=0;i<allBytes.length;i+=32768)b64+=String.fromCharCode.apply(null,Array.from(allBytes.subarray(i,i+32768)));return{ok:!0,file:{base64:btoa(b64),filename:fname.replace(".xlsx",".csv"),mime:"text/csv",count:count}}}'],
+      ["vo() v2.3.4 — unconfirmed filter", "async function vo(", "/orders/unconfirmed/filter",
+       'async function vo(e,r){let t=[];try{await e.db.iterateByDate(null,null,o=>{o.orderStatus==="paid"&&t.push({orderId:o.orderId,orderDate:o.orderDate})})}catch(o){return S(`listUnconfirmedOrders: IDB iterate failed: ${o.message}`),{ok:!1,code:"IDB_ERROR",message:o.message}}if(t.length===0)return{ok:!0,results:r.thresholdsHours.map(o=>({thresholdHours:o,ids:[]}))};let now=Date.now();let results=r.thresholdsHours.map(h=>{let cutoff=now-h*3600000;let ids=t.filter(o=>o.orderDate<=cutoff).map(o=>o.orderId);return{thresholdHours:h,ids:ids}});return{ok:!0,results:results}}'],
+      ["Oo() v2.3.5 — unconfirmed filter", "async function Oo(", "/orders/unconfirmed/filter",
+       'async function Oo(e,r){let t=[];try{await e.db.iterateByDate(null,null,o=>{o.orderStatus==="paid"&&t.push({orderId:o.orderId,orderDate:o.orderDate})})}catch(o){return S(`listUnconfirmedOrders: IDB iterate failed: ${o.message}`),{ok:!1,code:"IDB_ERROR",message:o.message}}if(t.length===0)return{ok:!0,results:r.thresholdsHours.map(o=>({thresholdHours:o,ids:[]}))};let now=Date.now();let results=r.thresholdsHours.map(h=>{let cutoff=now-h*3600000;let ids=t.filter(o=>o.orderDate<=cutoff).map(o=>o.orderId);return{thresholdHours:h,ids:ids}});return{ok:!0,results:results}}'],
+      ["Ir() v2.0.x — unconfirmed filter", "async function Ir(", "/orders/unconfirmed/filter",
        'async function Ir(e,r){let t=[];try{await e.db.iterateByDate(null,null,o=>{o.orderStatus==="paid"&&t.push({orderId:o.orderId,orderDate:o.orderDate})})}catch(o){return k(`listUnconfirmedOrders: IDB iterate failed: ${o.message}`),{ok:!1,code:"IDB_ERROR",message:o.message}}if(t.length===0)return{ok:!0,results:r.thresholdsHours.map(o=>({thresholdHours:o,ids:[]}))};let now=Date.now();let results=r.thresholdsHours.map(h=>{let cutoff=now-h*3600000;let ids=t.filter(o=>o.orderDate<=cutoff).map(o=>o.orderId);return{thresholdHours:h,ids:ids}});return{ok:!0,results:results}}'],
-      ["Et() — translate prepare",
+      ["_r() v2.3.4 — translate prepare", "async function _r(", "/api/v1/translate/lot/prepare",
+       'async function _r(e){try{let src=e.source||{};let requests=[];let fields=["title","description"];for(let f of fields){let text=src[f];if(!text||!text.trim())continue;let encoded=encodeURIComponent(text.trim());let url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=en&dt=t&q="+encoded;requests.push({field:f,url:url})}if(requests.length===0)return{ok:!1,code:"EMPTY_SOURCE",message:"No text to translate"};return{ok:!0,requests:requests}}catch(t){return S("prepareTranslate: local generation failed: "+t.message),{ok:!1,code:"LOCAL_ERROR",message:t.message}}}'],
+      ["Lr() v2.3.5 — translate prepare", "async function Lr(", "/api/v1/translate/lot/prepare",
+       'async function Lr(e){try{let src=e.source||{};let requests=[];let fields=["title","description"];for(let f of fields){let text=src[f];if(!text||!text.trim())continue;let encoded=encodeURIComponent(text.trim());let url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=en&dt=t&q="+encoded;requests.push({field:f,url:url})}if(requests.length===0)return{ok:!1,code:"EMPTY_SOURCE",message:"No text to translate"};return{ok:!0,requests:requests}}catch(t){return S("prepareTranslate: local generation failed: "+t.message),{ok:!1,code:"LOCAL_ERROR",message:t.message}}}'],
+      ["Et() v2.0.x — translate prepare", "async function Et(", "/api/v1/translate/lot/prepare",
        'async function Et(e){try{let src=e.source||{};let requests=[];let fields=["title","description"];for(let f of fields){let text=src[f];if(!text||!text.trim())continue;let encoded=encodeURIComponent(text.trim());let url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=en&dt=t&q="+encoded;requests.push({field:f,url:url})}if(requests.length===0)return{ok:!1,code:"EMPTY_SOURCE",message:"No text to translate"};return{ok:!0,requests:requests}}catch(t){return k("prepareTranslate: local generation failed: "+t.message),{ok:!1,code:"LOCAL_ERROR",message:t.message}}}'],
-      ["In() — heartbeat",
-       'async function In(){return null}'],
-      ["ta() — settings sync",
-       'async function ta(e){return{ok:!0,nextIntervalMs:null,status:null}}'],
-      ["ze() — install tracking",
-       'async function ze(e){}'],
-      ["Ye() — uninstall tracking",
-       'async function Ye(){return}'],
+      ["za() v2.3.4 — telemetry/report", "async function za(", "/api/v1/r", 'async function za(){return null}'],
+      ["Ct() v2.3.4 — install tracking", "async function Ct(", "/api/v1/extension/installed", 'async function Ct(e){}'],
+      ["fn() v2.3.4 — lifecycle install/update", "function fn(", "Ct({installId", 'function fn(e){}'],
+      ["ze() v2.3.4 — uninstall URL tracking", "async function ze(", "setUninstallURL", 'async function ze(){}'],
+      ["$r() v2.3.4 — funnel events", "async function $r(", "/api/v1/extension/event", 'async function $r(e){}'],
+      ["Lc() v2.3.4 — settings snapshot", "async function Lc(", "/api/v1/settings", 'async function Lc(e){return{ok:!0,nextIntervalMs:null,status:null}}'],
+      ["er() v2.3.4 — server version check", "async function er(", "/api/v1/extension/version", 'async function er(){return null}'],
+      ["rr() v2.3.4 — changelog fetch", "async function rr(", "/api/v1/extension/changelog", 'async function rr(){return[]}'],
+      ["os() v2.3.4 — auto extension reload", "function os(", "chrome.runtime.reload", 'function os(){}'],
+      ["Rt() v2.3.4 — nickname color", "async function Rt(", "/me/funpay/nickname-color",
+       'async function Rt(e){let t=e?.selection??{color:null,font:null,effect:null};try{let n=await V();n?await _({...n,nicknameColor:e?.styleKey??null,nicknameSelection:t}):await chrome.storage.local.set({f7ckNickSelection:t})}catch{}return{ok:!0,selection:t}}'],
+      // ─── v2.3.5 telemetry / lifecycle (функции переименованы) ───
+      ["Za() v2.3.5 — telemetry/report", "async function Za(", "/api/v1/r", 'async function Za(){return null}'],
+      ["mn() v2.3.5 — lifecycle install/update", "function mn(", "Ct({installId", 'function mn(e){}'],
+      ["Br() v2.3.5 — funnel events", "async function Br(", "/api/v1/extension/event", 'async function Br(e){}'],
+      ["Nc() v2.3.5 — settings snapshot", "async function Nc(", "/api/v1/settings", 'async function Nc(e){return{ok:!0,nextIntervalMs:null,status:null}}'],
+      ["tr() v2.3.5 — server version check", "async function tr(", "/api/v1/extension/version", 'async function tr(){return null}'],
+      ["nr() v2.3.5 — changelog fetch", "async function nr(", "/api/v1/extension/changelog", 'async function nr(){return[]}'],
+      ["as() v2.3.5 — auto extension reload", "function as(", "chrome.runtime.reload", 'function as(){}'],
     ];
 
-    for (let [name, rep] of bgFuncs) {
-      let result = applyBgPatch(bjs, name, rep);
+    for (let [desc, start, marker, rep] of bgPatches) {
+      let result = applyFuncPatch(bjs, desc, start, marker, rep);
       if (result) { bjs = result; patched++; }
     }
-
-    // Ot()
-    let otResult = applyOtPatch(bjs);
-    if (otResult) { bjs = otResult; patched++; }
 
     zip.file("background/b.js", bjs);
   }
