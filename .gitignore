@@ -8,8 +8,8 @@ latest-orig/
 latest-orig/**/
 
 # локальная распаковка оригинала 2.3.4 (сама v2.3.4 поддерживается патчером)
-archive/v2.3.4/
-archive/v2.3.4/**/
+archive/v2.3.4/orig-unpacked/
+archive/v2.3.4/orig-unpacked/**/
 
 __pycache__/
 __pycache__/**/
