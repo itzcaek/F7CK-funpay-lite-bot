@@ -249,7 +249,7 @@ const CONTENT_FUNCTION_PATCHES = [
   ["qE() v2.3.4 — Best subscription → Premium", "function qE(", "filter(at)", 'function qE(e){return{planKey:"premium",status:"active",expiresAt:null}}'],
   ["zE() v2.3.5 — Best subscription → Premium", "function zE(", "filter(at)", 'function zE(e){return{planKey:"premium",status:"active",expiresAt:null}}'],
   ["A() v2.0.x — Feature gate → true", "function A(", ".includes(t)", 'function A(e,t){return true}'],
-  ["D() v2.3.4 — Feature gate → true", "function D(", ".includes(t)", 'function D(e,t){return true}'],
+  ["D() v2.3.4/v2.3.5 — Feature gate → true", "function D(", ".includes(t)", 'function D(e,t){return true}'],
 ];
 
 const CONTENT_SIMPLE_PATCHES = [
@@ -265,13 +265,13 @@ const CONTENT_SIMPLE_PATCHES = [
   ["Hide colors v2.3.5 — no login",
    'if(y){if(!e){m.checked=!1,nt();return}if(!D(e,EC)){m.checked=!1,Ne({feature:"nickname_color",title:p("featureGatedCommunityTitle"),message:p("nicknameColorHideNeedCommunity"),tier:"community"});return}}if(!e){Y(Bi,!1),l(!1,null);return}',
    'if(!e){Y(Bi,y),l(y,null);return}'],
-  ["Nickname style save v2.3.4 — no account",
+  ["Nickname style save v2.3.4/v2.3.5 — no account",
    'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);if(!ye)return ae(),ee&&nt(),{ok:!1,code:"NO_AUTH"};',
    'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);'],
-  ["lr() — reset color no-fail",
+  ["lr() v2.0.x — reset color no-fail",
    'function lr(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
    'function lr(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'],
-  ["ur() — reset color no-fail",
+  ["ur() v2.0.x — reset color no-fail",
    'function ur(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
    'function ur(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'],
 ];
@@ -285,6 +285,27 @@ function findFunc(content, start) {
     if (content[i] === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
   }
   return [idx, end];
+}
+
+// Поддерживаемые версии. Версия берётся из описания патча:
+//   "… v2.3.4 …"        — только 2.3.4
+//   "… v2.3.4/v2.3.5 …" — обе версии
+//   "… v2.0.x …"        — все версии этой линейки (2.0.6, 2.0.7)
+//   без "v…"            — универсальный, применяется всегда
+const SUPPORTED_VERSIONS = ["2.0.6", "2.0.7", "2.3.4", "2.3.5"];
+
+function patchVersions(desc) {
+  let vs = new Set();
+  for (let m of desc.matchAll(/v(\d+\.\d+)\.(x|\d+)/g)) {
+    if (m[2] === "x") SUPPORTED_VERSIONS.forEach(v => v.startsWith(m[1] + ".") && vs.add(v));
+    else vs.add(`${m[1]}.${m[2]}`);
+  }
+  return vs.size ? vs : null;
+}
+
+function patchOk(desc, version) {
+  let vs = patchVersions(desc);
+  return vs === null || vs.has(version);
 }
 
 function applyFuncPatch(content, desc, start, marker, rep) {
@@ -356,11 +377,16 @@ async function processFile(bytes) {
     setStatus('Это не FunPay Lite Bot расширение', 'err');
     return;
   }
-  setStatus(`Версия: ${manifest.version}`, 'info');
+  let extVer = manifest.version || null;
+  if (!SUPPORTED_VERSIONS.includes(extVer)) {
+    setStatus(`Версия ${extVer || 'неизвестна'} не поддерживается патчером. Поддерживаются: ${SUPPORTED_VERSIONS.join(', ')}`, 'err');
+    return;
+  }
+  setStatus(`Версия: ${extVer} — поддерживается, патчу...`, 'info');
   setProgress(40);
 
   // Patch
-  let patched = 0, failed = 0;
+  let patched = 0, failed = 0, skipped = 0;
 
   // manifest.json
   manifest = (await manifestFile.async("string"))
@@ -374,14 +400,16 @@ async function processFile(bytes) {
   if (cFile) {
     let cjs = await cFile.async("string");
     for (let [desc, start, marker, rep] of CONTENT_FUNCTION_PATCHES) {
+      if (!patchOk(desc, extVer)) { skipped++; continue; }
       let result = applyFuncPatch(cjs, desc, start, marker, rep);
-      if (result) { cjs = result; patched++; }
+      if (result) { cjs = result; patched++; } else { failed++; }
     }
     for (let [name, old, rep] of CONTENT_SIMPLE_PATCHES) {
+      if (!patchOk(name, extVer)) { skipped++; continue; }
       if (cjs.includes(old)) {
         cjs = cjs.replace(old, rep);
         patched++;
-      }
+      } else { failed++; }
     }
     // F7CK: модуль отображения своего стиля ника (локально, без сервера).
     // Оригинальный Rt() писал свой стиль в кэш nicknameColors через ya();
@@ -463,15 +491,15 @@ f7ckSyncOwnNick();
       ["Et() v2.0.x — translate prepare", "async function Et(", "/api/v1/translate/lot/prepare",
        'async function Et(e){try{let src=e.source||{};let requests=[];let fields=["title","description"];for(let f of fields){let text=src[f];if(!text||!text.trim())continue;let encoded=encodeURIComponent(text.trim());let url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=en&dt=t&q="+encoded;requests.push({field:f,url:url})}if(requests.length===0)return{ok:!1,code:"EMPTY_SOURCE",message:"No text to translate"};return{ok:!0,requests:requests}}catch(t){return k("prepareTranslate: local generation failed: "+t.message),{ok:!1,code:"LOCAL_ERROR",message:t.message}}}'],
       ["za() v2.3.4 — telemetry/report", "async function za(", "/api/v1/r", 'async function za(){return null}'],
-      ["Ct() v2.3.4 — install tracking", "async function Ct(", "/api/v1/extension/installed", 'async function Ct(e){}'],
+      ["Ct() v2.3.4/v2.3.5 — install tracking", "async function Ct(", "/api/v1/extension/installed", 'async function Ct(e){}'],
       ["fn() v2.3.4 — lifecycle install/update", "function fn(", "Ct({installId", 'function fn(e){}'],
-      ["ze() v2.3.4 — uninstall URL tracking", "async function ze(", "setUninstallURL", 'async function ze(){}'],
+      ["ze() v2.3.4/v2.3.5 — uninstall URL tracking", "async function ze(", "setUninstallURL", 'async function ze(){}'],
       ["$r() v2.3.4 — funnel events", "async function $r(", "/api/v1/extension/event", 'async function $r(e){}'],
       ["Lc() v2.3.4 — settings snapshot", "async function Lc(", "/api/v1/settings", 'async function Lc(e){return{ok:!0,nextIntervalMs:null,status:null}}'],
       ["er() v2.3.4 — server version check", "async function er(", "/api/v1/extension/version", 'async function er(){return null}'],
       ["rr() v2.3.4 — changelog fetch", "async function rr(", "/api/v1/extension/changelog", 'async function rr(){return[]}'],
       ["os() v2.3.4 — auto extension reload", "function os(", "chrome.runtime.reload", 'function os(){}'],
-      ["Rt() v2.3.4 — nickname color", "async function Rt(", "/me/funpay/nickname-color",
+      ["Rt() v2.3.4/v2.3.5 — nickname color", "async function Rt(", "/me/funpay/nickname-color",
        'async function Rt(e){let t=e?.selection??{color:null,font:null,effect:null};try{let n=await V();n?await _({...n,nicknameColor:e?.styleKey??null,nicknameSelection:t}):await chrome.storage.local.set({f7ckNickSelection:t})}catch{}return{ok:!0,selection:t}}'],
       // ─── v2.3.5 telemetry / lifecycle (функции переименованы) ───
       ["Za() v2.3.5 — telemetry/report", "async function Za(", "/api/v1/r", 'async function Za(){return null}'],
@@ -484,8 +512,9 @@ f7ckSyncOwnNick();
     ];
 
     for (let [desc, start, marker, rep] of bgPatches) {
+      if (!patchOk(desc, extVer)) { skipped++; continue; }
       let result = applyFuncPatch(bjs, desc, start, marker, rep);
-      if (result) { bjs = result; patched++; }
+      if (result) { bjs = result; patched++; } else { failed++; }
     }
 
     zip.file("background/b.js", bjs);
@@ -503,7 +532,12 @@ f7ckSyncOwnNick();
   a.click();
   URL.revokeObjectURL(url);
 
-  setStatus(`Готово! ${patched} патчей применено. ZIP скачан.`, 'ok');
+  let msg = `Готово! Применено ${patched} патчей (v${extVer}), пропущено для других версий: ${skipped}. ZIP скачан.`;
+  if (failed) {
+    setStatus(`${msg} ВНИМАНИЕ: ${failed} патчей своей версии не применилось — проверь вручную!`, 'err');
+  } else {
+    setStatus(msg, 'ok');
+  }
 }
 
 // Drag & drop

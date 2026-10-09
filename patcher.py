@@ -30,6 +30,13 @@ CRX_URL = (
 )
 OUTPUT_DIR = "funpay-lite-bot-patched"
 
+# Поддерживаемые версии расширения. Патч помечается версией прямо в описании:
+#   "… v2.3.4 …"        — только 2.3.4
+#   "… v2.3.4/v2.3.5 …" — обе версии
+#   "… v2.0.x …"        — все версии этой линейки (2.0.6, 2.0.7)
+#   без "v…"            — универсальный, применяется всегда
+SUPPORTED_VERSIONS = ("2.0.6", "2.0.7", "2.3.4", "2.3.5")
+
 # ─── Цвета для терминала ─────────────────────────────────────
 class C:
     OK = "\033[92m"
@@ -118,18 +125,18 @@ CONTENT_SIMPLE_PATCHES = [
     ),
     # Nickname style save: снимаем требование аккаунта расширения
     (
-        "Nickname style save v2.3.4 → no account required",
+        "Nickname style save v2.3.4/v2.3.5 → no account required",
         'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);if(!ye)return ae(),ee&&nt(),{ok:!1,code:"NO_AUTH"};',
         'let ae=()=>{m=!1,j()},ye=await q().catch(()=>null);'
     ),
     # Legacy reset helpers (v2.0.6/v2.0.7)
     (
-        "lr() — reset nickname color → no-fail",
+        "lr() v2.0.x — reset nickname color → no-fail",
         'function lr(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
         'function lr(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'
     ),
     (
-        "ur() — reset nickname color → no-fail",
+        "ur() v2.0.x — reset nickname color → no-fail",
         'function ur(){chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}',
         'function ur(){try{localStorage.removeItem("LBNicknameColor")}catch{}chrome.runtime.sendMessage({target:"background",method:"setNicknameColor",payload:{styleKey:null}}).catch(()=>{})}'
     ),
@@ -151,7 +158,7 @@ CONTENT_FUNCTION_PATCHES = [
     ("zE() v2.3.5 — Best subscription → always Premium", "function zE(", "filter(at)", 'function zE(e){return{planKey:"premium",status:"active",expiresAt:null}}'),
 
     ("A() v2.0.x — Feature gate → always true", "function A(", ".includes(t)", 'function A(e,t){return true}'),
-    ("D() v2.3.4 — Feature gate → always true", "function D(", ".includes(t)", 'function D(e,t){return true}'),
+    ("D() v2.3.4/v2.3.5 — Feature gate → always true", "function D(", ".includes(t)", 'function D(e,t){return true}'),
 ]
 
 BACKGROUND_FUNCTION_PATCHES = [
@@ -245,7 +252,7 @@ BACKGROUND_FUNCTION_PATCHES = [
         'async function za(){return null}'
     ),
     (
-        "Ct() v2.3.4 — install tracking → blocked",
+        "Ct() v2.3.4/v2.3.5 — install tracking → blocked",
         "async function Ct(",
         "/api/v1/extension/installed",
         'async function Ct(e){}'
@@ -257,7 +264,7 @@ BACKGROUND_FUNCTION_PATCHES = [
         'function fn(e){}'
     ),
     (
-        "ze() v2.3.4 — uninstall URL tracking → blocked",
+        "ze() v2.3.4/v2.3.5 — uninstall URL tracking → blocked",
         "async function ze(",
         "setUninstallURL",
         'async function ze(){}'
@@ -296,7 +303,7 @@ BACKGROUND_FUNCTION_PATCHES = [
     # Без аккаунта сохраняем выбор в отдельный ключ f7ckNickSelection,
     # чтобы content-модуль F7CK_OWN_NICK_MODULE мог показать стиль на страницах.
     (
-        "Rt() v2.3.4 — nickname color → local no-fail",
+        "Rt() v2.3.4/v2.3.5 — nickname color → local no-fail",
         "async function Rt(",
         "/me/funpay/nickname-color",
         'async function Rt(e){let t=e?.selection??{color:null,font:null,effect:null};try{let n=await V();n?await _({...n,nicknameColor:e?.styleKey??null,nicknameSelection:t}):await chrome.storage.local.set({f7ckNickSelection:t})}catch{}return{ok:!0,selection:t}}'
@@ -393,6 +400,32 @@ f7ckSyncOwnNick();
 
 
 # ─── Утилиты поиска/замены функций ───────────────────────────
+def detect_version(ext_dir: str):
+    """Читает версию расширения из manifest.json."""
+    path = os.path.join(ext_dir, "manifest.json")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("version")
+    except Exception:
+        return None
+
+
+def patch_versions(desc: str):
+    """Версии из описания патча. None — универсальный (без пометки)."""
+    vs = set()
+    for maj_min, patch in re.findall(r"v(\d+\.\d+)\.(x|\d+)", desc):
+        if patch == "x":
+            vs.update(v for v in SUPPORTED_VERSIONS if v.startswith(maj_min + "."))
+        else:
+            vs.add(f"{maj_min}.{patch}")
+    return vs or None
+
+
+def version_applicable(desc: str, version: str) -> bool:
+    vs = patch_versions(desc)
+    return vs is None or version in vs
+
+
 def find_function(content: str, func_start: str):
     """Находит полную функцию по её началу."""
     idx = content.find(func_start)
@@ -413,31 +446,35 @@ def find_function(content: str, func_start: str):
     return idx, end, content[idx:end]
 
 
-def apply_simple_patches(content: str, patches: list, label: str):
-    """Применяет простые патчи (строка→строка)."""
-    applied = 0
-    failed = 0
+def apply_simple_patches(content: str, patches: list, version: str):
+    """Применяет простые патчи (строка→строка), только для своей версии."""
+    applied = failed = skipped = 0
     for desc, old, new in patches:
+        if not version_applicable(desc, version):
+            skipped += 1
+            continue
         if old in content:
             content = content.replace(old, new, 1)
             ok(f"  {desc}")
             applied += 1
         else:
-            warn(f"  {desc} — не найдено (возможно уже применён)")
+            warn(f"  {desc} — НЕ НАЙДЕНО, хотя версия должна поддерживаться!")
             failed += 1
-    return content, applied, failed
+    return content, applied, failed, skipped
 
 
-def apply_function_patches(content: str, patches: list):
+def apply_function_patches(content: str, patches: list, version: str):
     """
-    Применяет патчи функций.
+    Применяет патчи функций, только для своей версии.
     patches: (desc, search_start, required_marker|None, new_code)
     required_marker защищает от замены одноимённой функции из другой версии.
     """
-    applied = 0
-    failed = 0
+    applied = failed = skipped = 0
 
     for desc, search_start, marker, new_code in patches:
+        if not version_applicable(desc, version):
+            skipped += 1
+            continue
         candidates = [search_start]
         if search_start.startswith("async function "):
             candidates.append(search_start.replace("async function ", "function "))
@@ -457,7 +494,7 @@ def apply_function_patches(content: str, patches: list):
             break
 
         if idx is None:
-            warn(f"  {desc} — функция не найдена или маркер не совпал")
+            warn(f"  {desc} — НЕ НАЙДЕНО, хотя версия должна поддерживаться!")
             failed += 1
             continue
 
@@ -465,23 +502,23 @@ def apply_function_patches(content: str, patches: list):
         ok(f"  {desc}")
         applied += 1
 
-    return content, applied, failed
+    return content, applied, failed, skipped
 
 
-def patch_content_c(ext_dir: str):
+def patch_content_c(ext_dir: str, version: str):
     """Патчит content/c.js"""
     path = os.path.join(ext_dir, "content", "c.js")
     if not os.path.exists(path):
         err(f"Файл не найден: {path}")
-        return 0, 0
+        return 0, 0, 0
 
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    content, a1, f1 = apply_function_patches(content, CONTENT_FUNCTION_PATCHES)
-    content, a2, f2 = apply_simple_patches(content, CONTENT_SIMPLE_PATCHES, "c.js")
+    content, a1, f1, s1 = apply_function_patches(content, CONTENT_FUNCTION_PATCHES, version)
+    content, a2, f2, s2 = apply_simple_patches(content, CONTENT_SIMPLE_PATCHES, version)
 
-    # Дописываем модуль отображения своего стиля ника (идемпотентно)
+    # Дописываем модуль отображения своего стиля ника (универсален, идемпотентно)
     marker = "F7CK: own nickname style"
     if marker in content:
         warn("  Own nickname style module — уже есть")
@@ -493,25 +530,25 @@ def patch_content_c(ext_dir: str):
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    return a1 + a2, f1 + f2
+    return a1 + a2, f1 + f2, s1 + s2
 
 
-def patch_background_b(ext_dir: str):
+def patch_background_b(ext_dir: str, version: str):
     """Патчит background/b.js"""
     path = os.path.join(ext_dir, "background", "b.js")
     if not os.path.exists(path):
         err(f"Файл не найден: {path}")
-        return 0, 0
+        return 0, 0, 0
 
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    content, a1, f1 = apply_function_patches(content, BACKGROUND_FUNCTION_PATCHES)
+    content, a1, f1, s1 = apply_function_patches(content, BACKGROUND_FUNCTION_PATCHES, version)
 
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    return a1, f1
+    return a1, f1, s1
 
 
 def patch_manifest(ext_dir: str):
@@ -550,28 +587,47 @@ def main():
 
     extract_crx(crx_data, OUTPUT_DIR)
 
+    # ─── Определяем версию по manifest.json ───
+    version = detect_version(OUTPUT_DIR)
+    if version not in SUPPORTED_VERSIONS:
+        err(f"Версия {version or 'неизвестна'} НЕ ПОДДЕРЖИВАЕТСЯ патчером!")
+        print(f"""
+  Поддерживаемые версии: {', '.join(SUPPORTED_VERSIONS)}
+  Распакованная (НЕ пропатченная) копия оставлена в {OUTPUT_DIR}/""")
+        sys.exit(1)
+    ok(f"Версия расширения: v{version} — поддерживается")
+
     header("Применение патчей")
 
-    total_ok = 0
-    total_fail = 0
+    total_ok = total_fail = total_skip = 0
 
     print(f"\n{C.BOLD}manifest.json:{C.END}")
     patch_manifest(OUTPUT_DIR)
 
     print(f"\n{C.BOLD}content/c.js:{C.END}")
-    a, f = patch_content_c(OUTPUT_DIR)
+    a, f, s = patch_content_c(OUTPUT_DIR, version)
     total_ok += a
     total_fail += f
+    total_skip += s
 
     print(f"\n{C.BOLD}background/b.js:{C.END}")
-    a, f = patch_background_b(OUTPUT_DIR)
+    a, f, s = patch_background_b(OUTPUT_DIR, version)
     total_ok += a
     total_fail += f
+    total_skip += s
 
     header("Готово!")
     print(f"""
-  {C.OK}Применено патчей: {total_ok}{C.END}
-  {C.WARN}Не найдено (ожидаемо для других версий): {total_fail}{C.END}
+  {C.OK}Применено патчей (v{version}): {total_ok}{C.END}
+  {C.BOLD}Пропущено (другие версии): {total_skip}{C.END}
+  {C.WARN}Не найдено в своей версии: {total_fail}{C.END}""")
+
+    if total_fail:
+        print(f"""
+  {C.WARN}ВНИМАНИЕ: часть патчей для v{version} не применилась — возможно,
+  разработчики изменили код внутри версии. Проверь расширение вручную.{C.END}""")
+
+    print(f"""
 
   {C.BOLD}Расширение готово: {OUTPUT_DIR}/{C.END}
 
