@@ -102,14 +102,9 @@ python patcher.py
 | Версия | Дата | Статус | Файлы |
 | :---: | :---: | :--- | :--- |
 | **2.3.5** | 09.10.2026 | ✅ Актуальная | [Original (CRX)](archive/v2.3.5/funpay-lite-bot-v2.3.5-original.crx) · [Patched](archive/v2.3.5/funpay-lite-bot-v2.3.5-patched.zip) |
-| **2.3.4** | 07.10.2026 | 📦 Legacy | [Original (ZIP)*](archive/v2.3.4/funpay-lite-bot-v2.3.4-original.zip) · [Patched](archive/v2.3.4/funpay-lite-bot-v2.3.4-patched.zip) |
+| **2.3.4** | 07.10.2026 | 📦 Legacy | [Original (ZIP)](archive/v2.3.4/funpay-lite-bot-v2.3.4-original.zip) · [Patched](archive/v2.3.4/funpay-lite-bot-v2.3.4-patched.zip) |
 | **2.0.7** | 14.07.2026 | 📦 Legacy | [Original](archive/v2.0.7/funpay-lite-bot-v2.0.7-original.crx) · [Patched](archive/v2.0.7/funpay-lite-bot-v2.0.7-patched.zip) |
 | **2.0.6** | 13.07.2026 | 📦 Legacy | [Original](archive/v2.0.6/funpay-lite-bot-v2.0.6-original.crx) · [Patched](archive/v2.0.6/funpay-lite-bot-v2.0.6-patched.zip) |
-
-\* Оригинал v2.3.4 хранится в ZIP (подписанный CRX со стора восстановить нельзя — версия снята с публикации). Веб-патчер и `patcher.py` принимают оба формата.
-
-> [!NOTE]
-> Патчер определяет версию по `manifest.json` и применяет только патчи своей версии (поддерживаются **2.0.6, 2.0.7, 2.3.4, 2.3.5**). Неподдержанная версия — об этом честно напишет и остановится. Патчи ищут функции по маркерам внутри кода, а не только по именам.
 
 ---
 
